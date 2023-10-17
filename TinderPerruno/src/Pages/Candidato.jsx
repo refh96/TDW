@@ -1,61 +1,97 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import axios from 'axios';
-
-const cargarImagenRandom = async () => {
-  const response = await axios.get('https://dog.ceo/api/breeds/image/random');
-  return response.data.message;
-};
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import PetsIcon from '@mui/icons-material/Pets';
+import ListaPerrosAceptados from './Components/LsitaPerrosAceptados';
+import ListaPerrosRechazados from './Components/ListaPerrosRechazados';
 
 function Candidato() {
-  const [PerroCandidato, setPerroCandidato] = useState(generarNombre()); // Generar nombre aleatorio inicial
+  
+  const cargarImagenRandom = async () => {
+    const response = await axios.get('https://dog.ceo/api/breeds/image/random');
+    return response.data.message;
+  };
+
+  const [nombrePerroCandidato, setNombrePerroCandidato] = useState('');
   const [PerroAceptado, setPerroAceptado] = useState([]);
   const [PerroRechazado, setPerroRechazado] = useState([]);
   const { data, isLoading, refetch } = useQuery('PerroRandom', cargarImagenRandom);
+  useEffect(() => {
+    if (!nombrePerroCandidato) {
+      setNombrePerroCandidato(generarNombre());
+    }
+  }, [nombrePerroCandidato]);
+  
 
   const PerroA = () => {
-    if (PerroCandidato) {
-      setPerroAceptado([...PerroAceptado, PerroCandidato]);
-      setPerroCandidato(generarNombre()); // Generar un nuevo nombre aleatorio
-      refetch(); // Cargar una nueva imagen
+    if (nombrePerroCandidato) {
+      const nuevoPerro = {
+        imagen: data,
+        nombre: nombrePerroCandidato,
+        descripcion: 'Descripción del perro',
+      };
+  
+      setPerroAceptado([...PerroAceptado, nuevoPerro]);
+      setNombrePerroCandidato(generarNombre());
+      refetch();
     }
   };
+  
 
   const PerroR = () => {
-    if (PerroCandidato) {
-      setPerroRechazado([...PerroRechazado, PerroCandidato]);
-      setPerroCandidato(generarNombre()); // Generar un nuevo nombre aleatorio
-      refetch(); // Cargar una nueva imagen
+    if (nombrePerroCandidato) {
+      const nuevoPerro = {
+        imagen: data,
+        nombre: nombrePerroCandidato,
+        descripcion: 'Descripción del perro',
+      };
+      setPerroRechazado([...PerroRechazado, nuevoPerro]);
+      setNombrePerroCandidato(generarNombre());
+      refetch();
     }
   };
+  const moverPerroAceptado = (perro) => {
+    setPerroAceptado([...PerroAceptado, perro]);
+    setPerroRechazado(PerroRechazado.filter((p) => p !== perro));
+  };
 
-  const moverPerro = (perro, fromList, toList) => {
-    const updatedFromList = fromList.filter((d) => d !== perro);
-    toList.push(perro);
-    fromList === PerroAceptado ? setPerroAceptado(updatedFromList) : setPerroRechazado(updatedFromList);
+  const moverPerroRechazado = (perro) => {
+    setPerroRechazado([...PerroRechazado, perro]);
+    setPerroAceptado(PerroAceptado.filter((p) => p !== perro));
   };
 
   return (
-    <div>
-      <h1>Adopta un Perro</h1>
-      {isLoading ? (
-        <p>Cargando...</p>
-      ) : (
-        <img src={data} alt="Perro Candidato" />
-      )}
+
       <div>
-        <button onClick={PerroA}>
-          Aceptar
-        </button>
-        <button onClick={PerroR}>
-          Rechazar
-        </button>
-        <button onClick={() => moverPerro(PerroCandidato, PerroAceptado, PerroRechazado)}>
-          Arrepentirse
-        </button>
+        <Box sx={{ width: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider' }} textAlign={"center"} >
+          <PetsIcon/>
+            <Typography variant="h4" >Adopta un Perro</Typography>
+            {isLoading ? (
+              <p>Cargando...</p>
+            ) : (
+              <div>
+                <img src={data} alt="PerroCandidato" />
+                <Typography variant="h6">{nombrePerroCandidato}</Typography>
+              </div>
+            )}
+          </Box>
+          <Box textAlign={"center"}>
+            <Button type='button' variant="contained" color="primary" onClick={PerroA} >
+              Aceptar
+            </Button>
+            <Button type='button' variant="contained" color="secondary" onClick={PerroR}>
+              Rechazar
+            </Button>
+          </Box>
+        </Box>
+        <ListaPerrosAceptados perrosAceptados={PerroAceptado} onMoverPerro={moverPerroRechazado} />
+        <ListaPerrosRechazados perrosRechazados={PerroRechazado} onMoverPerro={moverPerroAceptado} />
       </div>
-    </div>
-  );
+    );
 }
 
 function generarNombre() {
@@ -69,3 +105,4 @@ function generarNombre() {
 }
 
 export default Candidato;
+
